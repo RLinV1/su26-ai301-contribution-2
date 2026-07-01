@@ -7,6 +7,8 @@
 
 ---
 
+I had to switch to a new issue from my previous 2nd issue since my old issue was taken/closed. So I'm starting a new issue
+
 ## Why I Chose This Issue
 
 The main reason I chose this issue is that I already have experience with the languages it uses, and I wanted to work on smaller repositories where I can easily learn more about the project and contribute greatly to it. This one is a React/TypeScript frontend feature paired with tests, which sits right in my comfort zone, and TWD ("Test While Developing") is a small enough codebase that I can actually understand how the whole thing fits together rather than getting lost in a huge project. TWD is also interesting to me because of what it does differently. It runs tests in the real browser against the actual dev server instead of jsdom or a separate E2E stack, and adding an example page is a great way to learn how that in-browser test runner and its `.twd.test.ts` files actually work against the real DOM.
