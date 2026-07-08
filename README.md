@@ -51,6 +51,8 @@ TWD is a plain Node/Vite project — no container setup required. Following `CON
 - Node.js and npm
 - Git
 
+**Platform Note (Windows):** I did this work on Windows, and ran into issues because several commands in `CONTRIBUTING.md` and in this doc (e.g. `grep -rn ...`) are Linux/Mac shell commands that aren't available in a plain Windows `cmd.exe`/PowerShell session. To follow the steps below as written, use **Git Bash** (installed alongside Git for Windows) or **WSL** instead of PowerShell/Command Prompt. Alternatively, PowerShell equivalents exist for most commands (e.g. `Select-String` instead of `grep`), but the commands in this README assume a Unix-like shell.
+
 **Steps**
 
 1. Fork and clone the repo, then create a feature branch (per `CONTRIBUTING.md`, never commit directly to `main`):
