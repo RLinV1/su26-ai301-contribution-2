@@ -182,6 +182,31 @@ Every query in the test uses `screenDom`, per the issue's explicit steer away fr
 
 ## Implementation Notes
 
+### Development Environment Setup Issues (Windows/WSL)
+
+Before writing any `FileUpload.tsx` code, I hit a chain of local environment problems just getting `examples/twd-test-app`'s dev server running per the `CONTRIBUTING.md` steps. None of this touched feature code — it was all tooling/environment — but it ate significant time and is worth recording since it's a direct consequence of `CONTRIBUTING.md`'s Unix-shell assumption (see the Platform Note above) going deeper than just `grep`.
+
+1. **`localhost:5173` returned a blank page.**
+   Root cause: a *different* `vite` dev server was already bound to port 5173 — one started with `npm run dev` from the **repo root** (`twd/`) rather than from `examples/twd-test-app/`. The root repo is the library itself and has no `index.html`, so that stray server 404'd on every request, which rendered blank in the browser. Meanwhile, when I started `twd-test-app`'s own dev server, Vite silently detected the port was taken and fell back to `5174` without saying anything obvious about *why* 5173 wasn't it. Fix: identify and stop the stray root-level process (`netstat -ano` → `Get-Process -Id`), then restart `twd-test-app`'s server, which then bound to 5173 correctly.
+
+2. **`Failed to resolve import "twd-js/bundled" from "virtual:twd/init"`.**
+   `examples/twd-test-app/vite.config.ts` aliases `twd-js/bundled` to `../../dist/bundled.es.js`, but that file didn't exist in `dist/` — only `dist/bundled.d.ts` (type declarations) was present. Root cause: the repo root's `build` script is:
+   ```
+   vite build && vite build -c vite.sw.config.js && NODE_ENV=production vite build -c vite.bundle.config.ts && cp src/cli/installsw.js dist/cli.js
+   ```
+   On Windows, `npm run build` executes scripts via `cmd.exe` regardless of which terminal you typed the command in (even Git Bash), and `cmd.exe` doesn't understand the POSIX `VAR=value command` prefix syntax. So the `NODE_ENV=production vite build -c vite.bundle.config.ts` step — the one that actually produces `dist/bundled.*` — failed immediately with `'NODE_ENV' is not recognized as an internal or external command`, and everything chained after it with `&&` (including the `cp` that produces `dist/cli.js`) silently never ran. The build reported success up to that point with no obvious top-level failure, which made this easy to miss.
+   Two fixes were considered: (a) add `cross-env` as a devDependency and rewrite the script to be cross-platform, or (b) do all TWD development from a POSIX shell (WSL) instead, leaving the shared script untouched. I chose (b) to avoid changing shared build tooling for a docs/example contribution — see the WSL issues below.
+
+3. **WSL's `node -v` reported `v12.22.9`** (Ubuntu's ancient apt-installed system Node) even though `nvm` had modern versions (`v20.15.0`, `v22.4.0`) installed. Root cause: `~/.bashrc`'s `nvm` loading lines were placed *after* the standard Ubuntu guard `case $- in *i*) ;; *) return;; esac`, which returns immediately for any non-interactive shell. So any non-interactive invocation of `bash` (e.g. `bash -lc '...'`, which is how tooling/scripts and even some editor integrations invoke commands) never sourced `nvm` and silently fell through to the ancient system `node` on `PATH`. Fix: installed the current Node LTS via `nvm install --lts` (`v24.18.0`), set it as `nvm alias default`, and added a duplicate `NVM_DIR`/`nvm.sh` sourcing block *before* the interactive-shell guard in `~/.bashrc` so both interactive and non-interactive shells resolve the same `node`. (Backed up the original as `~/.bashrc.bak` first.)
+
+4. **`node_modules` installed via Windows `npm` don't work under WSL.** After switching to WSL, `npm run build` failed with `Cannot find module '@rolldown/binding-linux-x64-gnu'` — the `node_modules` on disk had Windows-native optional-dependency binaries (`@rolldown/binding-win32-x64-msvc`, etc.) because they'd been installed by Windows `npm`, not Linux `npm`. Fix: `rm -rf node_modules && npm install` from *inside* WSL, for both the repo root and `examples/twd-test-app`, so the correct Linux-native binaries got pulled instead.
+
+5. **`rm -rf node_modules` failed with an I/O error / Access Denied on one specific `.node` binary.** This turned out to be a file lock: an earlier Windows-side `node.exe` process (a `twd-test-app` dev server I'd started directly on Windows while debugging issue #1, and never stopped) still had that native binary mapped/open. Killing the stray Windows `node.exe` processes (`Stop-Process`) released the lock and let the delete succeed.
+
+6. **A `twd-test-app` dev server started from WSL via a background command (`(npm run dev &)`) died silently** once the invoking command finished, even though it printed a few lines of output first. Plain `&` backgrounding wasn't enough to fully detach the process from the invoking shell session. Fix: use `setsid nohup npm run dev > log 2>&1 < /dev/null & disown`, which fully detaches the process so it survives after the launching command returns. Confirmed the detached server was actually reachable (`curl` returning `HTTP 200`) both from inside WSL and from Windows `localhost:5173` (WSL2 auto-forwards ports).
+
+**Net effect:** all of the above was resolved by moving local development for this contribution into WSL — Node updated to `v24.18.0` via `nvm`, `node_modules` reinstalled Linux-native at both the repo root and `examples/twd-test-app`, a full `npm run build` + `npm run copy:mock-sw` run completed successfully (producing the previously-missing `dist/bundled.es.js` and `dist/cli.js`), and `twd-test-app`'s dev server now runs cleanly on `http://localhost:5173`. No repo files were changed to reach this state (a `cross-env` fix to the shared `build` script was considered but deliberately not applied, to keep this contribution scoped to the example page/tests).
+
 ### Week [X] Progress
 
 [What you built this week, challenges faced, decisions made]
