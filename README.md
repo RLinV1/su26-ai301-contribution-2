@@ -1,9 +1,11 @@
+> ⚠️ **HEADS UP — WORK IN PROGRESS:** I am still actively working on this contribution and **not done testing at all**. The `FileUpload.tsx` page, its route, and the `file-upload.twd.test.ts` cases have been drafted, but nothing has been verified end-to-end — the tests have not been run green in the TWD sidebar, the page has not been manually exercised in the running app, and no screenshots have been captured. Nothing is committed or pushed and no PR is open. Treat everything here as **unverified** until this banner is removed. See **Implementation Notes → Week Progress** and **Testing Strategy → Manual Testing** for the current state.
+
 # Contribution 2: Add File Upload example page + tests
 
 **Contribution Number:** 2  
 **Student:** Raymond Lin  
 **Issue:** [#218 — [good first issue] Add File Upload example page + tests](https://github.com/BRIKEV/twd/issues/218)  
-**Status:** Phase I Complete
+**Status:** In Progress — implementation drafted, still working on it and not done testing at all
 
 ---
 
@@ -176,7 +178,16 @@ Every query in the test uses `screenDom`, per the issue's explicit steer away fr
 
 ### Manual Testing
 
-[To be completed in a later phase]
+**Not done yet — still working on it and not done testing at all.**
+
+I have not manually exercised the page in the running app yet. The manual pass I still need to do (and have not done) is:
+
+- Start `examples/twd-test-app` with `npm run dev` and navigate to `http://localhost:5173/file-upload`, confirming the page renders instead of the 404 catch-all.
+- By hand, pick a real image file through the input and confirm the selected filename appears as visible text.
+- By hand, pick a real non-image file (e.g. a `.txt`) and confirm the "Only image files are allowed." error appears and no filename is shown.
+- Open the TWD sidebar and confirm the new **File Upload** suite is discovered and both cases run green live against the real DOM.
+
+Until every item above is checked off, the implementation should be treated as **unverified**.
 
 ---
 
@@ -207,9 +218,17 @@ Before writing any `FileUpload.tsx` code, I hit a chain of local environment pro
 
 **Net effect:** all of the above was resolved by moving local development for this contribution into WSL — Node updated to `v24.18.0` via `nvm`, `node_modules` reinstalled Linux-native at both the repo root and `examples/twd-test-app`, a full `npm run build` + `npm run copy:mock-sw` run completed successfully (producing the previously-missing `dist/bundled.es.js` and `dist/cli.js`), and `twd-test-app`'s dev server now runs cleanly on `http://localhost:5173`. No repo files were changed to reach this state (a `cross-env` fix to the shared `build` script was considered but deliberately not applied, to keep this contribution scoped to the example page/tests).
 
-### Week [X] Progress
+### Week 3 Progress
 
-[What you built this week, challenges faced, decisions made]
+**Still working on it — not done testing at all.**
+
+This week I drafted the implementation described in the Implementation Plan above, following the `ComboboxSelect.tsx` reference the issue points to. What has been written so far:
+
+- **`examples/twd-test-app/src/pages/FileUpload.tsx` (new)** — a self-contained functional component modeled on `ComboboxSelect.tsx` (same `maxWidth: 480` centered wrapper, `useState`, inline styles). It has a single `<input type="file" accept="image/*" id="file-upload-input">` wired to a `<label htmlFor="file-upload-input">Upload an image:</label>`. `onChange` reads `e.target.files?.[0]`; a non-image `file.type` sets a visible error and clears the filename, while a valid image sets the filename and clears the error. The filename renders as visible text (`data-testid="uploaded-filename"`) and the error renders in `<p role="alert" data-testid="upload-error">`.
+- **`examples/twd-test-app/src/routes.tsx`** — added `import FileUpload from './pages/FileUpload';` and a `{ path: '/file-upload', Component: FileUpload }` entry right after the `/combobox-select` route and before the catch-all `*`. No nav/menu edit, matching how every sibling example page is reached (route entry + direct URL).
+- **`examples/twd-test-app/src/twd-tests/file-upload.twd.test.ts` (new)** — a `describe("File Upload", ...)` with two `screenDom`-based `it` cases: a happy path that uploads a `image/png` `File` via `userEvent.upload(input, file)` and asserts the filename is visible, and an invalid-type case that uploads a `text/plain` `File` and asserts `getByRole("alert")` is visible while `queryByTestId("uploaded-filename")` is `null`.
+
+All three files currently report zero TypeScript diagnostics. **However, none of this has been verified end-to-end yet** — I have not run the two test cases green in the TWD sidebar, have not manually exercised the page in the running app, and have not captured the required screenshots. Nothing has been committed or pushed and no PR is open. The code should be treated as **unverified / work-in-progress** until the Manual Testing checklist above is completed.
 
 ### Week [Y] Progress
 
