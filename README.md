@@ -1,11 +1,10 @@
-> ⚠️ **HEADS UP — WORK IN PROGRESS:** I am still actively working on this contribution and **not done testing at all**. The `FileUpload.tsx` page, its route, and the `file-upload.twd.test.ts` cases have been drafted, but nothing has been verified end-to-end — the tests have not been run green in the TWD sidebar, the page has not been manually exercised in the running app, and no screenshots have been captured. Nothing is committed or pushed and no PR is open. Treat everything here as **unverified** until this banner is removed. See **Implementation Notes → Week Progress** and **Testing Strategy → Manual Testing** for the current state.
-
 # Contribution 2: Add File Upload example page + tests
 
 **Contribution Number:** 2  
 **Student:** Raymond Lin  
 **Issue:** [#218 — [good first issue] Add File Upload example page + tests](https://github.com/BRIKEV/twd/issues/218)  
-**Status:** In Progress — implementation drafted, still working on it and not done testing at all
+**Pull Request:** [#299 — Feat/file upload example](https://github.com/BRIKEV/twd/pull/299)  
+**Status:** PR open — implementation and tests complete, both test cases passing, manual testing done
 
 ---
 
@@ -106,7 +105,7 @@ This issue is a missing-example "good first issue," not a bug, so there's nothin
   - `examples/twd-test-app/src/twd-tests/` contains `combobox-select.twd.test.ts` and `screen-queries.twd.test.ts` (among others) — no `file-upload.twd.test.ts`.
   - `routes.tsx` registers ten page routes plus the catch-all — no `/file-upload` entry.
 - One extra finding relevant to the issue's "add a link from the App menu" instruction: there is no shared navigation/menu component anywhere in `examples/twd-test-app/src`. The root `App.tsx` (`/`) is just the default Vite + React starter page (logo, counter, a `Jokes` component) — it doesn't render links to `/combobox-select`, `/screen-queries`, or any other example page. Every existing example page is reachable only because it's registered in `routes.tsx`; there's no menu list to add an entry to. This matters for the Solution Approach below.
-- Screenshots of the 404 page and the TWD sidebar with the missing suite will be captured and attached here once the dev server is running locally for the implementation phase.
+- Screenshots of the working page (successful upload showing the filename, and the error state for a rejected file) were captured and attached to PR #299.
 
 ---
 
@@ -158,11 +157,11 @@ Every query in the test uses `screenDom`, per the issue's explicit steer away fr
      - Happy path: `await twd.visit("/file-upload")` → `const input = screenDom.getByLabelText(/upload an image/i)` → `const file = new File(["(binary)"], "photo.png", { type: "image/png" })` → `await userEvent.upload(input, file)` → assert via `screenDom.getByText("photo.png")` + `twd.should(el, "be.visible")`.
      - Invalid type: same visit/lookup → `const file = new File(["data"], "notes.txt", { type: "text/plain" })` → `await userEvent.upload(input, file)` → assert via `screenDom.getByRole("alert")` (or `screenDom.getByTestId("upload-error")`) is visible, and `screenDom.queryByTestId("uploaded-filename")` is `null`.
 
-5. **Verify locally:** with `npm run dev` running in `examples/twd-test-app`, open the TWD sidebar in the browser, confirm the new `File Upload` suite appears and both tests run green, and manually exercise the page once by hand (upload an image, then a non-image file) to confirm the UI matches what the tests assert.
+5. **Verify locally:** with `npm run dev` running in `examples/twd-test-app`, open the TWD sidebar in the browser, confirm the new `File Upload` suite appears and both tests run green, and manually exercise the page once by hand (upload an image, then a non-image file) to confirm the UI matches what the tests assert. ✅ Done — see Testing Strategy below.
 
-6. **Commit in small, independently-correct steps** (per `CONTRIBUTING.md`): one commit for the page + route registration, one commit for the test file — each should compile and pass on its own.
+6. **Commit in small, independently-correct steps** (per `CONTRIBUTING.md`): one commit for the page + route registration, one commit for the test file, and a follow-up fix commit once the invalid-file test case was found to be failing (see Implementation Notes → Week Progress). ✅ Done — three commits on `feat/file-upload-example`.
 
-7. **Open the PR** using `.github/pull_request_template.md`, referencing `Fixes #218`, checking the "New feature" type, filling in Test Details with the two cases above, and attaching the required screenshots: the green TWD sidebar and the new page in the browser.
+7. **Open the PR** using `.github/pull_request_template.md`, referencing `Fixes #218`, checking the "Test addition or update" type, filling in Test Details with the two cases above, and attaching the required screenshots. ✅ Done — [PR #299](https://github.com/BRIKEV/twd/pull/299) is open.
 
 ---
 
@@ -170,24 +169,24 @@ Every query in the test uses `screenDom`, per the issue's explicit steer away fr
 
 ### Unit Tests
 
-[To be completed in a later phase]
+[Not applicable — this contribution is scoped to the example app's TWD in-browser tests, not the library's unit tests]
 
 ### Integration Tests
 
-[To be completed in a later phase]
+The two `file-upload.twd.test.ts` cases described above serve as the integration-level coverage for this feature, run live against the real DOM via the TWD sidebar rather than jsdom.
 
 ### Manual Testing
 
-**Not done yet — still working on it and not done testing at all.**
+**Completed.** I worked on getting the tests fully green and finished the manual pass:
 
-I have not manually exercised the page in the running app yet. The manual pass I still need to do (and have not done) is:
+- Started `examples/twd-test-app` with `npm run dev` and navigated to `http://localhost:5173/file-upload` — the page renders instead of the 404 catch-all.
+- By hand, picked a real image file through the input and confirmed the selected filename appears as visible text.
+- By hand, picked a real non-image file (`.txt`) and confirmed the "Only image files are allowed." error appears and no filename is shown.
+- Opened the TWD sidebar and confirmed the **File Upload** suite is discovered and both cases run green live against the real DOM.
 
-- Start `examples/twd-test-app` with `npm run dev` and navigate to `http://localhost:5173/file-upload`, confirming the page renders instead of the 404 catch-all.
-- By hand, pick a real image file through the input and confirm the selected filename appears as visible text.
-- By hand, pick a real non-image file (e.g. a `.txt`) and confirm the "Only image files are allowed." error appears and no filename is shown.
-- Open the TWD sidebar and confirm the new **File Upload** suite is discovered and both cases run green live against the real DOM.
+**Hiccup along the way:** the invalid-file test case was initially failing. The root cause was in the page component, not the test — the `<input>` element's `accept="image/*"` attribute combined with how the input was wired meant the component wasn't actually letting a non-image file register as a selected file in the first place, so the `onChange` handler never got a `File` to check against and the error state never set. In other words, I hadn't allowed the invalid file to actually be "uploaded" into the input, so there was nothing for the error-handling logic to act on. This was fixed in a follow-up commit (`fix(examples): fixed the file upload input test for invalid image`) so the non-image file is accepted into the input and correctly triggers the visible error message. After that fix, both test cases pass.
 
-Until every item above is checked off, the implementation should be treated as **unverified**.
+Both screenshots (successful upload showing the filename, and the visible error for a rejected file) are attached to PR #299.
 
 ---
 
@@ -220,39 +219,46 @@ Before writing any `FileUpload.tsx` code, I hit a chain of local environment pro
 
 ### Week 3 Progress
 
-**Still working on it — not done testing at all.**
-
-This week I drafted the implementation described in the Implementation Plan above, following the `ComboboxSelect.tsx` reference the issue points to. What has been written so far:
+This week I drafted the implementation described in the Implementation Plan above, following the `ComboboxSelect.tsx` reference the issue points to:
 
 - **`examples/twd-test-app/src/pages/FileUpload.tsx` (new)** — a self-contained functional component modeled on `ComboboxSelect.tsx` (same `maxWidth: 480` centered wrapper, `useState`, inline styles). It has a single `<input type="file" accept="image/*" id="file-upload-input">` wired to a `<label htmlFor="file-upload-input">Upload an image:</label>`. `onChange` reads `e.target.files?.[0]`; a non-image `file.type` sets a visible error and clears the filename, while a valid image sets the filename and clears the error. The filename renders as visible text (`data-testid="uploaded-filename"`) and the error renders in `<p role="alert" data-testid="upload-error">`.
 - **`examples/twd-test-app/src/routes.tsx`** — added `import FileUpload from './pages/FileUpload';` and a `{ path: '/file-upload', Component: FileUpload }` entry right after the `/combobox-select` route and before the catch-all `*`. No nav/menu edit, matching how every sibling example page is reached (route entry + direct URL).
 - **`examples/twd-test-app/src/twd-tests/file-upload.twd.test.ts` (new)** — a `describe("File Upload", ...)` with two `screenDom`-based `it` cases: a happy path that uploads a `image/png` `File` via `userEvent.upload(input, file)` and asserts the filename is visible, and an invalid-type case that uploads a `text/plain` `File` and asserts `getByRole("alert")` is visible while `queryByTestId("uploaded-filename")` is `null`.
 
-All three files currently report zero TypeScript diagnostics. **However, none of this has been verified end-to-end yet** — I have not run the two test cases green in the TWD sidebar, have not manually exercised the page in the running app, and have not captured the required screenshots. Nothing has been committed or pushed and no PR is open. The code should be treated as **unverified / work-in-progress** until the Manual Testing checklist above is completed.
+At the end of this week, all three files reported zero TypeScript diagnostics, but nothing had been verified end-to-end yet.
 
-### Week [Y] Progress
+### Week 4 Progress
 
-[Continue documenting as you work]
+I worked on getting the tests running green in the TWD sidebar and finishing manual testing. The happy-path test passed right away, but the invalid-type test case was failing. Digging in, the issue was that I hadn't actually allowed the non-image file to be uploaded into the input in the first place — the way the input/`accept` attribute and change handling were wired meant the `.txt` file wasn't registering as a selected file, so `handleChange` never ran far enough to set the error state. I fixed this so the input properly accepts the file selection regardless of type and lets the component's own validation (rather than the browser input) decide whether to show the error. After the fix, both test cases run green in the TWD sidebar.
+
+I also completed the manual pass: exercised the page by hand for both a valid image and an invalid `.txt` file, confirmed the UI matches what the tests assert, and captured screenshots of both states.
+
+Committed the work as three commits on `feat/file-upload-example` (page + route, tests, and the fix for the invalid-file case) and opened [PR #299](https://github.com/BRIKEV/twd/pull/299) against `BRIKEV:main`, referencing issue #218.
 
 ### Code Changes
 
-- **Files modified:** [List]
-- **Key commits:** [Links to important commits]
-- **Approach decisions:** [Why you chose certain approaches]
+- **Files modified:**
+  - `examples/twd-test-app/src/pages/FileUpload.tsx` (new)
+  - `examples/twd-test-app/src/routes.tsx`
+  - `examples/twd-test-app/src/twd-tests/file-upload.twd.test.ts` (new)
+- **Key commits:**
+  - `feat(examples): add file upload example page` (493712e)
+  - `test(examples): add file upload twd tests` (406ade3)
+  - `fix(examples): fixed the file upload input test for invalid image` (d525f6d)
+- **Approach decisions:** Modeled the page and test structurally on `ComboboxSelect.tsx` / `combobox-select.twd.test.ts` and the `screenDom` query style from `screen-queries.twd.test.ts`; deliberately skipped adding a new nav/menu component since no sibling example page has one.
 
 ---
 
 ## Pull Request
 
-**PR Link:** [GitHub PR URL when submitted]
+**PR Link:** [https://github.com/BRIKEV/twd/pull/299](https://github.com/BRIKEV/twd/pull/299)
 
-**PR Description:** [Draft or final PR description - much of the content above can be adapted]
+**PR Description:** Adds the `FileUpload.tsx` example page, registers the `/file-upload` route, and adds `file-upload.twd.test.ts` with two passing cases (valid image upload shows the filename; invalid file type shows a visible error). Checked "Test addition or update," confirmed tests were added and pass, and confirmed manual testing was done. Screenshots of both the success and error states are attached.
 
 **Maintainer Feedback:**
-- [Date]: [Summary of feedback received]
-- [Date]: [How you addressed it]
+- Not yet reviewed.
 
-**Status:** [Awaiting review / Iterating / Approved / Merged]
+**Status:** Open — awaiting review.
 
 ---
 
@@ -260,20 +266,20 @@ All three files currently report zero TypeScript diagnostics. **However, none of
 
 ### Technical Skills Gained
 
-[What you learned technically]
+Learned how to use gpg keys and also more about the importance of testing.
 
 ### Challenges Overcome
 
-[What was hard and how you solved it]
+The problem wasn't difficult and it was a great first issue for building upon the existing infrastructure. The 
+codebase wasn't too difficult to understand.
 
 ### What I'd Do Differently Next Time
 
-[Reflection on your process]
-
+I would speed up the process in which I solved the issue.
 ---
 
 ## Resources Used
 
 - [Link to helpful documentation]
 - [Tutorial or Stack Overflow post that helped]
-- [GitHub issues or discussions that helped]
+- https://github.com/BRIKEV/twd/issues/218
