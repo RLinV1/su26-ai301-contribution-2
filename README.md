@@ -4,7 +4,7 @@
 **Student:** Raymond Lin  
 **Issue:** [#218 — [good first issue] Add File Upload example page + tests](https://github.com/BRIKEV/twd/issues/218)  
 **Pull Request:** [#299 — Feat/file upload example](https://github.com/BRIKEV/twd/pull/299)  
-**Status:** PR open — implementation and tests complete, both test cases passing, manual testing done
+**Status:** ✅ Done — PR #299 reviewed, approved, and merged into `BRIKEV:main` on 2026-07-22. Implementation and tests complete, both test cases passing, manual testing done.
 
 ---
 
@@ -256,9 +256,11 @@ Committed the work as three commits on `feat/file-upload-example` (page + route,
 **PR Description:** Adds the `FileUpload.tsx` example page, registers the `/file-upload` route, and adds `file-upload.twd.test.ts` with two passing cases (valid image upload shows the filename; invalid file type shows a visible error). Checked "Test addition or update," confirmed tests were added and pass, and confirmed manual testing was done. Screenshots of both the success and error states are attached.
 
 **Maintainer Feedback:**
-- Not yet reviewed.
+- Approved by maintainer [@kevinccbsg](https://github.com/kevinccbsg) (Kevin Julián Martínez Escobar): "Thanks @RLinV1 LGTM 🚀"
+- Merged into `BRIKEV:main` on 2026-07-22.
+- Maintainer also added me to the project's contributors via all-contributors ([PR #306](https://github.com/BRIKEV/twd/pull/306)).
 
-**Status:** Open — awaiting review.
+**Status:** ✅ Merged and finished.
 
 ---
 
